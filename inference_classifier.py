@@ -8,7 +8,17 @@ import os
 
 MODEL_FILE = "./model.p"
 
-st.title("✋ ISL Gesture Recognition")
+# Mapping from numeric label → alphabet
+# ⚠️ Adjust this mapping if your dataset has fewer/more classes
+label_map = {
+    0: "A", 1: "B", 2: "C", 3: "D", 4: "E",
+    5: "F", 6: "G", 7: "H", 8: "I", 9: "J",
+    10: "K", 11: "L", 12: "M", 13: "N", 14: "O",
+    15: "P", 16: "Q", 17: "R", 18: "S", 19: "T",
+    20: "U", 21: "V", 22: "W", 23: "X", 24: "Y", 25: "Z"
+}
+
+st.title("✋ ISL Gesture → Alphabet Recognition")
 
 # Check if trained model exists
 if not os.path.exists(MODEL_FILE):
@@ -22,7 +32,7 @@ with open(MODEL_FILE, "rb") as f:
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
-st.write("Show a hand gesture to the camera below:")
+st.write("📷 Show a hand gesture to the camera below:")
 
 # Take input from webcam
 img_file = st.camera_input("Capture gesture")
@@ -44,6 +54,8 @@ if img_file is not None:
 
         # Predict gesture
         prediction = model.predict([landmarks])[0]
-        st.success(f"✅ Predicted gesture: **Class {prediction}**")
+        predicted_letter = label_map.get(prediction, f"Unknown (Class {prediction})")
+
+        st.success(f"✅ Predicted gesture: **{predicted_letter}**")
     else:
         st.warning("⚠️ No hand detected. Try again.")
