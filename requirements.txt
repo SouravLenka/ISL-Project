@@ -1,6 +1,6 @@
-streamlit
-opencv-python-headless
-mediapipe==0.10.9
-scikit-learn
+streamlit==1.49.1
 numpy
-pillow
+pandas
+scikit-learn
+opencv-python-headless
+joblib
