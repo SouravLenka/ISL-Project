@@ -1,53 +1,65 @@
-import pickle
-import cv2
-import mediapipe as mp
-import numpy as np
-import streamlit as st
-from PIL import Image
 import os
+import subprocess
+import streamlit as st
+import joblib
+import cv2
+import numpy as np
 
-MODEL_FILE = "./model.p"
+# Paths
+MODEL_PATH = "model.pkl"
 
-st.title("✋ ISL Gesture Recognition (Inference)")
+# ----------------------------
+# Helper: Ensure model exists
+# ----------------------------
+def ensure_model():
+    if not os.path.exists(MODEL_PATH):
+        st.warning("⚠️ No trained model found. Training the model now...")
 
-# Check if trained model exists
-if not os.path.exists(MODEL_FILE):
-    st.error("❌ No trained model found. Please run train_classifier.py first.")
-    st.stop()
+        # Run training script
+        result = subprocess.run(
+            ["python", "train_classifier.py"],
+            capture_output=True,
+            text=True
+        )
 
-# Load model
-with open(MODEL_FILE, "rb") as f:
-    model = pickle.load(f)
+        if result.returncode != 0:
+            st.error("❌ Training failed. Please check train_classifier.py")
+            st.text(result.stderr)
+            st.stop()
+        else:
+            st.success("✅ Model trained successfully!")
 
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
+# ----------------------------
+# Load Model
+# ----------------------------
+ensure_model()
+model = joblib.load(MODEL_PATH)
 
-st.write("Show a hand gesture to the camera below:")
+# ----------------------------
+# Streamlit UI
+# ----------------------------
+st.set_page_config(page_title="ISL Gesture Recognition", page_icon="🖐️", layout="centered")
 
-# Take input from webcam
-img_file = st.camera_input("Capture gesture")
+st.title("🖐️ ISL Gesture Recognition (Inference)")
 
-if img_file is not None:
-    # Convert to OpenCV format
-    image = Image.open(img_file)
-    frame = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+st.write("This app recognizes Indian Sign Language gestures using a trained classifier.")
 
-    # Preprocess with mediapipe
-    rgb_img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = hands.process(rgb_img)
+# ----------------------------
+# Upload Image / Video
+# ----------------------------
+uploaded_file = st.file_uploader("Upload an image for prediction", type=["jpg", "jpeg", "png"])
 
-    if results.multi_hand_landmarks:
-        landmarks = []
-        for hand_landmarks in results.multi_hand_landmarks:
-            for lm in hand_landmarks.landmark:
-                landmarks.extend([lm.x, lm.y, lm.z])
+if uploaded_file is not None:
+    # Convert file to OpenCV format
+    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    image = cv2.imdecode(file_bytes, 1)
 
-        # Predict gesture
-        prediction = model.predict([landmarks])[0]
-        st.success(f"✅ Predicted gesture: **Class {prediction}**")
+    st.image(image, channels="BGR", caption="Uploaded Image")
 
-        # Show captured image
-        st.image(frame, channels="BGR", caption=f"Predicted: Class {prediction}")
+    # Preprocess as needed
+    # (Change this according to your feature extraction pipeline)
+    features = image.flatten().reshape(1, -1)
 
-    else:
-        st.warning("⚠️ No hand detected. Try again.")
+    # Prediction
+    prediction = model.predict(features)[0]
+    st.success(f"✅ Predicted Gesture: **{prediction}**")
