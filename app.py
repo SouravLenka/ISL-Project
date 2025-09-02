@@ -1,65 +1,63 @@
-import os
-import subprocess
-import streamlit as st
-import joblib
 import cv2
+import mediapipe as mp
+import streamlit as st
 import numpy as np
 
-# Paths
-MODEL_PATH = "model.pkl"
+st.set_page_config(page_title="ISL Project", layout="wide")
 
-# ----------------------------
-# Helper: Ensure model exists
-# ----------------------------
-def ensure_model():
-    if not os.path.exists(MODEL_PATH):
-        st.warning("⚠️ No trained model found. Training the model now...")
+st.title("🤟 Indian Sign Language Detection")
+st.write("This app uses MediaPipe + OpenCV to detect hand gestures for ISL.")
 
-        # Run training script
-        result = subprocess.run(
-            ["python", "train_classifier.py"],
-            capture_output=True,
-            text=True
-        )
 
-        if result.returncode != 0:
-            st.error("❌ Training failed. Please check train_classifier.py")
-            st.text(result.stderr)
-            st.stop()
-        else:
-            st.success("✅ Model trained successfully!")
+# Mediapipe setup
+mp_hands = mp.solutions.hands
+mp_drawing = mp.solutions.drawing_utils
 
-# ----------------------------
-# Load Model
-# ----------------------------
-ensure_model()
-model = joblib.load(MODEL_PATH)
 
-# ----------------------------
-# Streamlit UI
-# ----------------------------
-st.set_page_config(page_title="ISL Gesture Recognition", page_icon="🖐️", layout="centered")
+def process_frame(frame, hands_model):
+    """Process a frame and return annotated frame"""
+    frame = cv2.flip(frame, 1)  # mirror effect
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-st.title("🖐️ ISL Gesture Recognition (Inference)")
+    results = hands_model.process(rgb)
 
-st.write("This app recognizes Indian Sign Language gestures using a trained classifier.")
+    if results.multi_hand_landmarks:
+        for hand_landmarks in results.multi_hand_landmarks:
+            mp_drawing.draw_landmarks(
+                frame, hand_landmarks, mp_hands.HAND_CONNECTIONS
+            )
 
-# ----------------------------
-# Upload Image / Video
-# ----------------------------
-uploaded_file = st.file_uploader("Upload an image for prediction", type=["jpg", "jpeg", "png"])
+    return frame
 
-if uploaded_file is not None:
-    # Convert file to OpenCV format
-    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    image = cv2.imdecode(file_bytes, 1)
 
-    st.image(image, channels="BGR", caption="Uploaded Image")
+def main():
+    run = st.checkbox("Start Camera")
 
-    # Preprocess as needed
-    # (Change this according to your feature extraction pipeline)
-    features = image.flatten().reshape(1, -1)
+    if run:
+        stframe = st.empty()
 
-    # Prediction
-    prediction = model.predict(features)[0]
-    st.success(f"✅ Predicted Gesture: **{prediction}**")
+        cap = cv2.VideoCapture(0)
+        with mp_hands.Hands(
+            static_image_mode=False,
+            max_num_hands=2,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5,
+        ) as hands:
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    st.write("Failed to grab frame")
+                    break
+
+                frame = process_frame(frame, hands)
+
+                # Convert BGR → RGB for Streamlit
+                stframe.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), channels="RGB")
+
+        cap.release()
+    else:
+        st.info("☝️ Check 'Start Camera' to begin.")
+
+
+if __name__ == "__main__":
+    main()
