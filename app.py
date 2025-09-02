@@ -2,7 +2,6 @@ import cv2
 import streamlit as st
 import mediapipe as mp
 import numpy as np
-import tempfile
 
 st.set_page_config(page_title="ISL Detection", layout="wide")
 
@@ -45,4 +44,4 @@ if start_cam:
         frame_placeholder.image(frame_rgb, channels="RGB")
 
     cap.release()
-    cv2.destroyAllWindows()
+    # Removed cv2.destroyAllWindows() – not needed in Streamlit
