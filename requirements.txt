@@ -1,6 +1,10 @@
 streamlit==1.49.1
-numpy
-pandas
-scikit-learn
-opencv-python-headless
-joblib
+opencv-python-headless==4.12.0.88
+opencv-contrib-python==4.12.0.88
+mediapipe==0.10.9
+protobuf==3.20.3
+numpy==2.0.2
+pandas==2.3.2
+scikit-learn==1.6.1
+scipy==1.13.1
+matplotlib==3.9.4
