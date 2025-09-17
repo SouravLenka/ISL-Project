@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageOps
 
-# ✅ Mediapipe updated import
+# ✅ Updated Mediapipe import for 0.10.x
 from mediapipe import solutions as mp_solutions
 
 from isl_utils import load_model, extract_landmarks, predict

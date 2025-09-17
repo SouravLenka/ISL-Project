@@ -11,13 +11,14 @@ def load_model(model_path="./model.p"):
         return pickle.load(f)
 
 def extract_landmarks(hand_landmarks):
-    # Use x, y, z for compatibility with your dataset
+    """Extract (x, y, z) coordinates from a Mediapipe hand landmarks object."""
     landmarks = []
     for lm in hand_landmarks.landmark:
         landmarks.extend([lm.x, lm.y, lm.z])
     return landmarks
 
 def predict(model, landmarks):
+    """Predict the class using trained model and return readable label."""
     X = np.asarray(landmarks, dtype=np.float32).reshape(1, -1)
     pred = model.predict(X)[0]
     return LABEL_MAP.get(pred, f"Unknown (Class {pred})")
