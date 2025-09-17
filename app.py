@@ -3,9 +3,12 @@ import os
 import sys
 import subprocess
 import cv2
-import mediapipe as mp
 import numpy as np
 from PIL import Image, ImageOps
+
+# ✅ Mediapipe updated import
+from mediapipe import solutions as mp_solutions
+
 from isl_utils import load_model, extract_landmarks, predict
 
 st.set_page_config(page_title="ISL Gesture Recognition", page_icon="🤟", layout="centered")
@@ -24,6 +27,7 @@ with st.expander("ℹ️ How to use", expanded=False):
         "- If no model is found, you can train it (requires `data.pickle`).\n"
         "- On Streamlit Cloud, files written at runtime are **ephemeral**."
     )
+
 
 def ensure_trained_model():
     if os.path.exists(MODEL_FILE):
@@ -44,11 +48,13 @@ def ensure_trained_model():
     st.error("Model training failed or was not completed.")
     st.stop()
 
+
 def pil_image_to_bgr(img: Image.Image) -> np.ndarray:
     img = ImageOps.exif_transpose(img).convert("RGB")
     arr = np.array(img)
     bgr = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
     return bgr
+
 
 model = ensure_trained_model()
 
@@ -59,14 +65,13 @@ if img_file is not None:
     frame_bgr = pil_image_to_bgr(img)
     frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
 
-    mp_hands = mp.solutions.hands
-
-    with mp_hands.Hands(
+    # ✅ Updated mediapipe usage
+    with mp_solutions.hands.Hands(
         static_image_mode=True,
         max_num_hands=1,
         min_detection_confidence=0.6
-    ) as hands:
-        results = hands.process(frame_rgb)
+    ) as hands_detector:
+        results = hands_detector.process(frame_rgb)
         if not results.multi_hand_landmarks:
             st.warning("No hand detected. Try again.")
             st.stop()
