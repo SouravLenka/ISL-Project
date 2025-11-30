@@ -17,5 +17,5 @@ This project is a **real-time Indian Sign Language (ISL) gesture recognition sys
 
 ---
 
-## 🚀 Project Structure
+
 
